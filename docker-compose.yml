@@ -1,0 +1,135 @@
+version: "3.7"
+services :
+    php73 :
+        build : ./php7.3/
+        container_name : php73
+        volumes:
+        - ~/volumes/www/:/var/www:rw
+        - /etc/localtime:/etc/localtime
+        - ~/volumes/php/7.3/log:/phplog
+        - ~/volumes/php/7.3/crontab:/etc/crontabs/root
+        - ~/volumes/php/7.3/supervisor.d.php73:/etc/supervisor.d
+        links:
+        - redis
+        - db
+        - mongo
+        ports :
+        - "9000:9000"
+        restart: always
+        depends_on:
+        - redis
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+    php72 :
+        image: hengoye/php72
+        container_name : php72
+        volumes:
+        - ~/volumes/www:/var/www:rw
+        - /etc/localtime:/etc/localtime
+        - ~/volumes/php/7.2/log:/phplog
+        - ~/volumes/php/7.2/crontab:/etc/crontabs/root
+        - ~/volumes/php/7.2/supervisor.d:/etc/supervisor.d
+        links:
+        - redis
+        - db
+        - mongo
+        ports :
+        - "9001:9000"
+        restart: always
+        depends_on:
+        - redis
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+    nginx : 
+        image : nginx
+        container_name : nginx
+        ports :
+        - "80:80"
+        - "443:443"
+        restart: always
+        volumes:
+        - /etc/localtime:/etc/localtime
+        - ~/volumes/nginx/nginx.conf:/etc/nginx/nginx.conf
+        - ~/volumes/nginx/conf.d:/etc/nginx/conf.d
+        - ~/volumes/nginx/logs:/etc/nginx/logs
+        - /var/www:/var/www:rw
+        links:
+        - redis
+        - php72
+        depends_on:
+        - redis
+        - php72
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+    db:
+        image : mysql:5.7.28
+        container_name : mysql
+        restart : always
+        ports :
+        - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+        - ~/volumes/mysql:/var/lib/mysql
+        - /etc/localtime:/etc/localtime
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+
+    redis:
+        image: redis
+        container_name : redis
+        restart: always
+        volumes:
+        - ~/volumes/redis:/data
+        - /etc/localtime:/etc/localtime
+        ports:
+        - 6379:6379
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+
+    mongo:
+        image: mongo
+        container_name : mongo
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+
+    mongo-express:
+        container_name : mongo-express
+        image: mongo-express
+        restart: always
+        ports:
+        - 8081:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: root
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+
+    phpmyadmin:
+        container_name : phpmyadmin 
+        image: phpmyadmin
+        restart: always
+        ports:
+        - 9090:80
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
