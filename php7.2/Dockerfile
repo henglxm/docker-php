@@ -19,6 +19,7 @@ RUN apk add --no-cache --virtual .build-deps \
     libzip-dev \
     linux-headers \
     curl \
+    curl-dev \
     gnupg \
     libxslt-dev \
     gd-dev \
