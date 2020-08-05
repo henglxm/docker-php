@@ -39,6 +39,7 @@ RUN apk add --no-cache --virtual .build-deps \
     #pecl install xdebug-2.7.2 && \
     pecl install -o -f redis && \
     pecl install -o -f mongodb && \
+    pecl install -o -f yar && \
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
     php composer-setup.php && \
     mv composer.phar /usr/bin/composer && \
@@ -46,6 +47,7 @@ RUN apk add --no-cache --virtual .build-deps \
     composer global require hirak/prestissimo && \
     echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini && \
     echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongodb.ini && \
+    echo "extension=yar.so" > /usr/local/etc/php/conf.d/ymongodbar.ini && \
     sed -i "s|;*listen\s*=\s*127.0.0.1:9000|listen = 9000|g" /usr/local/etc/php-fpm.d/www.conf && \
     sed -i "s|;*pm.max_children\s*=\s*5|pm.max_children = 100|g" /usr/local/etc/php-fpm.d/www.conf && \
     sed -i "s|;*request_slowlog_timeout\s*=\s*0|request_slowlog_timeout = 2|g" /usr/local/etc/php-fpm.d/www.conf && \
