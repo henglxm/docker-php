@@ -1,19 +1,5 @@
 version: "3.7"
 services :
-    python3 :
-        build :  ./python3.john
-        container_name : python3
-        volumes:
-        - ~/volumes/www/:/var/www:rw
-        - ~/volumes/www/recoveryPasss/python:/usr/src/app
-        - /etc/localtime:/etc/localtime
-        ports :
-        - "5000:5000"
-        restart: always
-        logging:
-            driver: "json-file"
-            options:
-                max-size: "5m"
     php73 :
         image : registry.cn-zhangjiakou.aliyuncs.com/imobie/php73
         container_name : php73
@@ -24,10 +10,6 @@ services :
         - ~/volumes/php/7.3/crontab:/etc/crontabs/root
         - ~/volumes/php/7.3/supervisor.d:/etc/supervisor.d
         links:
-        - python3
-        - nginx
-        - redis
-        - db
         - mongo
         ports :
         - "9000:9000"
@@ -61,7 +43,7 @@ services :
             options:
                 max-size: "5m"
     nginx : 
-        image : nginx
+        build : nginx
         container_name : nginx
         ports :
         - "80:80"
@@ -73,12 +55,16 @@ services :
         - ~/volumes/nginx/conf.d:/etc/nginx/conf.d
         - ~/volumes/nginx/logs:/etc/nginx/logs
         - /var/www:/var/www:rw
+        - ~/volumes/nginx/logrotate:/etc/logrotate.d/
+        - ~/volumes/nginx/crontabs/:/var/spool/cron/crontabs/
         links:
         - redis
         - php72
+        - php73
         depends_on:
         - redis
         - php72
+        - php73
         logging:
             driver: "json-file"
             options:
