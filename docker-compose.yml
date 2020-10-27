@@ -1,5 +1,29 @@
 version: "3.7"
 services :
+    toget_ytb_dl :
+        build : toget_ytb_dl
+        container_name : toget_ytb_dl
+        volumes:
+        - ~/volumes/www/toget/ytb-dl:/usr/src/app
+        - /etc/localtime:/etc/localtime
+        ports :
+        - "5000:5000"
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
+    toget_download :
+        build : toget_download
+        container_name : toget_download
+        volumes:
+        - ~/volumes/www/toget/download:/usr/src/app
+        - /etc/localtime:/etc/localtime
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "5m"
     php73 :
         image : registry.cn-zhangjiakou.aliyuncs.com/imobie/php73
         container_name : php73
@@ -10,12 +34,16 @@ services :
         - ~/volumes/php/7.3/crontab:/etc/crontabs/root
         - ~/volumes/php/7.3/supervisor.d:/etc/supervisor.d
         links:
+        - db
         - mongo
+        - toget_ytb_dl
         ports :
         - "9000:9000"
         restart: always
         depends_on:
+        - db
         - redis
+        - toget_ytb_dl
         logging:
             driver: "json-file"
             options:
@@ -43,7 +71,7 @@ services :
             options:
                 max-size: "5m"
     nginx : 
-        build : nginx
+        image : registry.cn-zhangjiakou.aliyuncs.com/imobie/nginx-1.19
         container_name : nginx
         ports :
         - "80:80"
@@ -61,6 +89,7 @@ services :
         - redis
         - php72
         - php73
+        - toget_download
         depends_on:
         - redis
         - php72
