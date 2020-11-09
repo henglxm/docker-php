@@ -20,6 +20,12 @@ services :
         - ~/volumes/www/toget/download:/usr/src/app
         - /etc/localtime:/etc/localtime
         restart: always
+        ports :
+        - "5001:5001"
+        environment:
+            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+            AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
         logging:
             driver: "json-file"
             options:

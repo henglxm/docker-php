@@ -4,6 +4,8 @@ LABEL maintainer="hengoye@sina.cn"
 
 WORKDIR /usr/src/app
 
+RUN apk add --no-cache --virtual .build-deps ffmpeg
+
 COPY requirements.txt ./
 COPY root /var/spool/cron/crontabs/root
 COPY start.sh /start.sh

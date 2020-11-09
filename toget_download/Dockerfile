@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps \
 COPY requirements.txt ./
 COPY root /var/spool/cron/crontabs/root
 COPY start.sh /start.sh
-RUN pip install --proxy="http://192.168.5.187:1080" --upgrade pip
-RUN pip install --proxy="http://192.168.5.187:1080" --no-cache-dir -r requirements.txt
+RUN pip install --proxy="http://192.168.5.171:1080" --upgrade pip
+RUN pip install --proxy="http://192.168.5.171:1080" --no-cache-dir -r requirements.txt
 
 CMD [ "sh", "/start.sh" ]
