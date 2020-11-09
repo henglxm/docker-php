@@ -16,5 +16,6 @@ COPY root /var/spool/cron/crontabs/root
 COPY start.sh /start.sh
 RUN pip install --proxy="http://192.168.5.171:1080" --upgrade pip
 RUN pip install --proxy="http://192.168.5.171:1080" --no-cache-dir -r requirements.txt
+COPY YoutubeDL.py /usr/local/lib/python3.9/site-packages/youtube_dl/
 
 CMD [ "sh", "/start.sh" ]
