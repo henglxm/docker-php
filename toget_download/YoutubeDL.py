@@ -2464,10 +2464,19 @@ class YoutubeDL(object):
 
     def urlopen(self, req):
         """ Start an HTTP download """
+        if isinstance(req, str) is False:
+            is_download = True
+        else:
+            is_download = False
+        """ Start an HTTP download """
         if isinstance(req, compat_basestring):
             req = sanitized_Request(req)
+
+        if is_download is True:
             return self._opener_download.open(req,
                                               timeout=self._socket_timeout)
+        else:
+            return self._opener.open(req, timeout=self._socket_timeout)
 
         return self._opener.open(req, timeout=self._socket_timeout)
 
