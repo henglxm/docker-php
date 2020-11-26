@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 from __future__ import absolute_import, unicode_literals
+
 import collections
 import contextlib
 import copy
@@ -23,7 +25,9 @@ import time
 import tokenize
 import traceback
 import random
+
 from string import ascii_letters
+
 from .compat import (
     compat_basestring,
     compat_cookiejar,
@@ -850,24 +854,14 @@ class YoutubeDL(object):
                     'The program functionality for this site has been marked as broken, '
                     'and will probably not work.')
 
-            try:
-                ie_result = ie.extract(url)
+            return self.__extract_info(url, ie, download, extra_info, process)
+        else:
+            self.report_error('no suitable InfoExtractor for URL %s' % url)
 
-                # Finished already (backwards compatibility; listformats and friends should be moved here)
-                if ie_result is None:
-                    break
-                if isinstance(ie_result, list):
-                    # Backwards compatibility: old IE result format
-                    ie_result = {
-                        '_type': 'compat_list',
-                        'entries': ie_result,
-                    }
-                self.add_default_extra_info(ie_result, ie, url)
-                if process:
-                    return self.process_ie_result(ie_result, download,
-                                                  extra_info)
-                else:
-                    return ie_result
+    def __handle_extraction_exceptions(func):
+        def wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
             except GeoRestrictedError as e:
                 msg = e.msg
                 if e.countries:
@@ -875,10 +869,8 @@ class YoutubeDL(object):
                         map(ISO3166Utils.short2full, e.countries))
                 msg += '\nYou might want to use a VPN or a proxy server (with --proxy) to workaround.'
                 self.report_error(msg)
-                break
             except ExtractorError as e:  # An error we somewhat expected
                 self.report_error(compat_str(e), e.format_traceback())
-                break
             except MaxDownloadsReached:
                 raise
             except Exception as e:
@@ -886,11 +878,28 @@ class YoutubeDL(object):
                     self.report_error(error_to_compat_str(e),
                                       tb=encode_compat_str(
                                           traceback.format_exc()))
-                    break
                 else:
                     raise
+
+        return wrapper
+
+    @__handle_extraction_exceptions
+    def __extract_info(self, url, ie, download, extra_info, process):
+        ie_result = ie.extract(url)
+        # Finished already (backwards compatibility; listformats and friends should be moved here)
+        if ie_result is None:
+            return
+        if isinstance(ie_result, list):
+            # Backwards compatibility: old IE result format
+            ie_result = {
+                '_type': 'compat_list',
+                'entries': ie_result,
+            }
+        self.add_default_extra_info(ie_result, ie, url)
+        if process:
+            return self.process_ie_result(ie_result, download, extra_info)
         else:
-            self.report_error('no suitable InfoExtractor for URL %s' % url)
+            return ie_result
 
     def add_default_extra_info(self, ie_result, ie, url):
         self.add_extra_info(
@@ -1087,9 +1096,9 @@ class YoutubeDL(object):
                     self.to_screen('[download] ' + reason)
                     continue
 
-                entry_result = self.process_ie_result(entry,
-                                                      download=download,
-                                                      extra_info=extra)
+                entry_result = self.__process_iterable_entry(
+                    entry, download, extra)
+                # TODO: skip failed (empty) entries?
                 playlist_results.append(entry_result)
             ie_result['entries'] = playlist_results
             self.to_screen('[download] Finished downloading playlist: %s' %
@@ -1121,6 +1130,12 @@ class YoutubeDL(object):
             return ie_result
         else:
             raise Exception('Invalid result type: %s' % result_type)
+
+    @__handle_extraction_exceptions
+    def __process_iterable_entry(self, entry, download, extra_info):
+        return self.process_ie_result(entry,
+                                      download=download,
+                                      extra_info=extra_info)
 
     def _build_format_filter(self, filter_spec):
         " Returns a function to filter the formats according to the filter_spec "
@@ -2049,7 +2064,6 @@ class YoutubeDL(object):
             try:
 
                 def dl(name, info):
-
                     fd = get_suitable_downloader(info,
                                                  self.params)(self,
                                                               self.params)
@@ -2449,22 +2463,13 @@ class YoutubeDL(object):
                  for lang, formats in subtitles.items()]))
 
     def urlopen(self, req):
-
-        if isinstance(req, str) is False:
-            is_download = True
-        else:
-            is_download = False
         """ Start an HTTP download """
         if isinstance(req, compat_basestring):
             req = sanitized_Request(req)
-
-        if is_download is True:
             return self._opener_download.open(req,
                                               timeout=self._socket_timeout)
-        else:
-            return self._opener.open(req, timeout=self._socket_timeout)
 
-        # return self._opener.open(req, timeout=self._socket_timeout)
+        return self._opener.open(req, timeout=self._socket_timeout)
 
     def print_debug_header(self):
         if not self.params.get('verbose'):
@@ -2571,7 +2576,8 @@ class YoutubeDL(object):
             if 'http' in proxies and 'https' not in proxies:
                 proxies['https'] = proxies['http']
         proxy_handler = PerRequestProxyHandler(proxies)
-        debuglevel = 0
+
+        debuglevel = 1 if self.params.get('debug_printtraffic') else 0
         https_handler = make_HTTPS_handler(self.params, debuglevel=debuglevel)
         params = self.params.copy()
         params['proxy'] = None
